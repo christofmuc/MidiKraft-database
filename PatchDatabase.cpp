@@ -19,6 +19,7 @@
 #include <boost/format.hpp>
 
 #include "SQLiteCpp/Database.h"
+#include "SQLiteCpp/Backup.h"
 #include "SQLiteCpp/Statement.h"
 #include "SQLiteCpp/Transaction.h"
 
@@ -55,7 +56,7 @@ namespace midikraft {
 			File dbFile(db_.getFilename());
 			if (dbFile.existsAsFile()) {				
 				File backupCopy(dbFile.getParentDirectory().getNonexistentChildFile(dbFile.getFileNameWithoutExtension() + suffix, dbFile.getFileExtension(), false));
-				db_.backup(backupCopy.getFullPathName().toStdString().c_str(), SQLite::Database::Save);
+				backup(backupCopy.getFullPathName().toStdString().c_str());
 			}
 			else {
 				jassertfalse;
@@ -519,6 +520,17 @@ namespace midikraft {
 
 			return sumOfAll;
 		}
+
+		void backup(const char* apFilename)
+		{
+			// Open the database file identified by apFilename
+			SQLite::Database otherDatabase(apFilename, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+			SQLite::Backup bkp(otherDatabase, db_);
+			bkp.executeStep(); // Execute all steps at once
+			jassert(bkp.getRemainingPageCount() == 0);
+			// RAII Finish Backup an Close the other Database
+		}
+
 
 	private:
 		SQLite::Database db_;
