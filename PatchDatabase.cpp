@@ -31,6 +31,10 @@ namespace midikraft {
 	const std::string kDataBaseFileName = "SysexDatabaseOfAllPatches.db3";
 	const std::string kDataBaseBackupSuffix = "-backup";
 
+	bool isBackupFilename(std::string const filename) {
+		return filename.find(kDataBaseBackupSuffix) != std::string::npos;
+	}
+
 	const int SCHEMA_VERSION = 6;
 	/* History */
 	/* 1 - Initial schema */
@@ -42,7 +46,10 @@ namespace midikraft {
 
 	class PatchDatabase::PatchDataBaseImpl {
 	public:
-		PatchDataBaseImpl(std::string const &databaseFile) : db_(databaseFile.c_str(), SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE), bitfield({}) {
+		PatchDataBaseImpl(std::string const &databaseFile) : db_(databaseFile.c_str(), 
+			isBackupFilename(databaseFile) ? SQLite::OPEN_READONLY : (SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE)), 
+			bitfield({})
+		{
 			createSchema();
 			manageBackupDiskspace(kDataBaseBackupSuffix);
 			categoryDefinitions_ = getCategories();
